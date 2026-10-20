@@ -2,7 +2,7 @@
 
 # Hi,
 
-I'm a Digital Business and Data Sciecne student interested in Cybersecurity, Coding and Clouad Data.
+I'm a Digital Business and Data Sciecne student at UE interested in Cybersecurity, Coding and Clouad Data.
 
 ## 🔭 Currently
 - Learning Pentesting and Advanced-Level of Python
