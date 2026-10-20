@@ -1,0 +1,894 @@
+// Dynamic Arrays
+
+#include <stdio.h>
+#include <stdlib.h>
+
+// Dynamic Arrays
+typedef struct
+{
+    char id[20];
+    char firstName[30];
+    char lastName[30];
+    char section[10];
+} Student;
+
+typedef struct
+{
+    char title[50];
+    int coefficient;
+} Module;
+
+typedef struct
+{
+    char studentId[20];
+    char moduleTitle[50];
+    float note;
+} Grade;
+
+// The "Deliberation" structure
+typedef struct
+{
+    char studentId[20];
+    float average;
+    char status[10]; // "Pass" or "Fail"
+} Result;
+
+// --- Global Dynamic Arrays ---
+Student *students = NULL;
+size_t studentCount = 0;
+
+Module *modules = NULL;
+size_t moduleCount = 0;
+
+Grade *grades = NULL;
+size_t gradeCount = 0;
+
+Result *results = NULL;
+size_t resultCount = 0;
+
+// --- Utility Functions (Manual Logic) ---
+
+int stringsEqual(char *s1, char *s2)
+{
+    int i = 0;
+    while (s1[i] != '\0' && s2[i] != '\0')
+    {
+        if (s1[i] != s2[i])
+            return 0;
+        i++;
+    }
+    return (s1[i] == s2[i]);
+}
+
+void stringCopy(char *dest, char *src)
+{
+    int i = 0;
+    while (src[i] != '\0')
+    {
+        dest[i] = src[i];
+        i++;
+    }
+    dest[i] = '\0';
+}
+
+// --- File Operations (With Error Handling) ---
+
+void saveToFile()
+{
+    FILE *f;
+    f = fopen("students.bin", "wb");
+    if (f == NULL)
+        printf("Error: students.bin could not be opened for writing.\n");
+    else
+    {
+        fwrite(students, sizeof(Student), studentCount, f);
+        fclose(f);
+    }
+
+    f = fopen("modules.bin", "wb");
+    if (f == NULL)
+        printf("Error: modules.bin could not be opened for writing.\n");
+    else
+    {
+        fwrite(modules, sizeof(Module), moduleCount, f);
+        fclose(f);
+    }
+
+    f = fopen("grades.bin", "wb");
+    if (f == NULL)
+        printf("Error: grades.bin could not be opened for writing.\n");
+    else
+    {
+        fwrite(grades, sizeof(Grade), gradeCount, f);
+        fclose(f);
+    }
+
+    f = fopen("deliberation.bin", "wb");
+    if (f == NULL)
+        printf("Error: deliberation.bin could not be opened for writing.\n");
+    else
+    {
+        fwrite(results, sizeof(Result), resultCount, f);
+        fclose(f);
+    }
+
+    printf("All data successfully saved to files.\n");
+}
+
+void loadFromFile()
+{
+    FILE *f;
+    Student st;
+    Module mt;
+    Grade gr;
+    Result rs;
+
+    f = fopen("students.bin", "rb");
+    if (f == NULL)
+        printf("Error: students.bin not found.\n");
+    else
+    {
+        studentCount = 0;
+        while (fread(&st, sizeof(Student), 1, f) == 1)
+        {
+            students = (Student *)realloc(students, (studentCount + 1) * sizeof(Student));
+            students[studentCount++] = st;
+        }
+        fclose(f);
+    }
+
+    f = fopen("modules.bin", "rb");
+    if (f == NULL)
+        printf("Error: modules.bin not found.\n");
+    else
+    {
+        moduleCount = 0;
+        while (fread(&mt, sizeof(Module), 1, f) == 1)
+        {
+            modules = (Module *)realloc(modules, (moduleCount + 1) * sizeof(Module));
+            modules[moduleCount++] = mt;
+        }
+        fclose(f);
+    }
+
+    f = fopen("grades.bin", "rb");
+    if (f == NULL)
+        printf("Error: grades.bin not found.\n");
+    else
+    {
+        gradeCount = 0;
+        while (fread(&gr, sizeof(Grade), 1, f) == 1)
+        {
+            grades = (Grade *)realloc(grades, (gradeCount + 1) * sizeof(Grade));
+            grades[gradeCount++] = gr;
+        }
+        fclose(f);
+    }
+
+    f = fopen("deliberation.bin", "rb");
+    if (f == NULL)
+        printf("Error: deliberation.bin not found.\n");
+    else
+    {
+        resultCount = 0;
+        while (fread(&rs, sizeof(Result), 1, f) == 1)
+        {
+            results = (Result *)realloc(results, (resultCount + 1) * sizeof(Result));
+            results[resultCount++] = rs;
+        }
+        fclose(f);
+    }
+    printf("All available data loaded.\n");
+}
+
+// --- Management Logic ---
+
+void manageStudents()
+{
+    int ch;
+    char search[30];
+    printf("\n1.Add\n2.Delete(ID)\n3.Modify(ID)\n4.Search\n5.Display\nChoice: ");
+    scanf("%d", &ch);
+    if (ch == 1)
+    {
+        students = (Student *)realloc(students, (studentCount + 1) * sizeof(Student));
+        printf("\nID: ");
+        scanf("%s", students[studentCount].id);
+        printf("\nFirst: ");
+        scanf("%s", students[studentCount].firstName);
+        printf("\nLast: ");
+        scanf("%s", students[studentCount].lastName);
+        printf("\nSec: ");
+        scanf("%s", students[studentCount].section);
+        studentCount++;
+    }
+    else if (ch == 2)
+    {
+        printf("\nID to delete: ");
+        scanf("%s", search);
+        for (size_t i = 0; i < studentCount; i++)
+        {
+            if (stringsEqual(students[i].id, search))
+            {
+                for (size_t j = i; j < studentCount - 1; j++)
+                    students[j] = students[j + 1];
+                studentCount--;
+                printf("Deleted.\n");
+                return;
+            }
+        }
+    }
+    else if (ch == 3)
+    {
+        printf("\nID to modify: ");
+        scanf("%s", search);
+        for (size_t i = 0; i < studentCount; i++)
+        {
+            if (stringsEqual(students[i].id, search))
+            {
+                printf("\nNew Sec: ");
+                scanf("%s", students[i].section);
+                return;
+            }
+        }
+    }
+    else if (ch == 4)
+    {
+        printf("\nEnter ID or Name: ");
+        scanf("%s", search);
+        for (size_t i = 0; i < studentCount; i++)
+        {
+            if (stringsEqual(students[i].id, search) || stringsEqual(students[i].firstName, search))
+                printf("Found: %s %s, ID: %s, Sec: %s\n", students[i].firstName, students[i].lastName, students[i].id, students[i].section);
+        }
+    }
+    else if (ch == 5)
+    {
+        for (size_t i = 0; i < studentCount; i++)
+            printf("ID %s: %s %s\n", students[i].id, students[i].firstName, students[i].lastName);
+    }
+}
+
+void manageModules()
+{
+    int ch;
+    char title[50];
+    printf("\n1.Add\n2.Delete\n3.Modify\n4.Display\nChoice: ");
+    scanf("%d", &ch);
+    if (ch == 1)
+    {
+        modules = (Module *)realloc(modules, (moduleCount + 1) * sizeof(Module));
+        printf("\nTitle: ");
+        scanf("%s", modules[moduleCount].title);
+        printf("\nCoeff: ");
+        scanf("%d", &modules[moduleCount].coefficient);
+        moduleCount++;
+    }
+    else if (ch == 2)
+    {
+        printf("\nTitle to delete: ");
+        scanf("%s", title);
+        for (size_t i = 0; i < moduleCount; i++)
+        {
+            if (stringsEqual(modules[i].title, title))
+            {
+                for (size_t j = i; j < moduleCount - 1; j++)
+                    modules[j] = modules[j + 1];
+                moduleCount--;
+                printf("Module deleted.\n");
+                return;
+            }
+        }
+        printf("Module not found.\n");
+    }
+    else if (ch == 3)
+    {
+        printf("\nTitle to modify: ");
+        scanf("%s", title);
+        for (size_t i = 0; i < moduleCount; i++)
+        {
+            if (stringsEqual(modules[i].title, title))
+            {
+                printf("\nNew Title: ");
+                scanf("%s", modules[i].title);
+                printf("\nNew Coeff: ");
+                scanf("%d", &modules[i].coefficient);
+                printf("Module updated.\n");
+                return;
+            }
+        }
+        printf("Module not found.\n");
+    }
+    else if (ch == 4)
+    {
+        for (size_t i = 0; i < moduleCount; i++)
+            printf("- %s (Coef: %d)\n", modules[i].title, modules[i].coefficient);
+    }
+}
+
+// --- Grades and Deliberation Struct Logic ---
+
+void manageGradesAndDeliberation()
+{
+    int ch;
+    char sid[20], mt[50], sec[10];
+    printf("\n1.Assign\n2.Modify\n3.By Module\n4.By Student \n5.By Section\nChoice: ");
+    scanf("%d", &ch);
+
+    if (ch == 1)
+    {
+        grades = (Grade *)realloc(grades, (gradeCount + 1) * sizeof(Grade));
+        printf("\nID: ");
+        scanf("%s", sid);
+        printf("\nModule: ");
+        scanf("%s", mt);
+        printf("\nGrade: ");
+        scanf("%f", &grades[gradeCount].note);
+        stringCopy(grades[gradeCount].studentId, sid);
+        stringCopy(grades[gradeCount].moduleTitle, mt);
+        gradeCount++;
+    }
+    else if (ch == 2)
+    {
+        printf("\nID: ");
+        scanf("%s", sid);
+        printf("\nModule: ");
+        scanf("%s", mt);
+        for (size_t i = 0; i < gradeCount; i++)
+        {
+            if (stringsEqual(grades[i].studentId, sid) && stringsEqual(grades[i].moduleTitle, mt))
+            {
+                printf("\nNew Grade: ");
+                scanf("%f", &grades[i].note);
+                return;
+            }
+        }
+    }
+    else if (ch == 3)
+    {
+        printf("\nModule: ");
+        scanf("%s", mt);
+        for (size_t i = 0; i < gradeCount; i++)
+        {
+            if (stringsEqual(grades[i].moduleTitle, mt))
+                printf("ID %s: Grade %.2f\n", grades[i].studentId, grades[i].note);
+        }
+    }
+    else if (ch == 4 || ch == 5)
+    {
+        if (ch == 5)
+        {
+            printf("\nSection: ");
+            scanf("%s", sec);
+        }
+        // Update Deliberation Result struct array
+        resultCount = 0;
+        free(results);
+        results = NULL;
+        for (size_t i = 0; i < studentCount; i++)
+        {
+            if (ch == 5 && !stringsEqual(students[i].section, sec))
+                continue;
+            float pts = 0.0f;
+            float coefs = 0.0f;
+            for (size_t j = 0; j < gradeCount; j++)
+            {
+                if (stringsEqual(grades[j].studentId, students[i].id))
+                {
+                    for (size_t k = 0; k < moduleCount; k++)
+                    {
+                        if (stringsEqual(modules[k].title, grades[j].moduleTitle))
+                        {
+                            pts += grades[j].note * (float)modules[k].coefficient;
+                            coefs += (float)modules[k].coefficient;
+                        }
+                    }
+                }
+            }
+            results = (Result *)realloc(results, (resultCount + 1) * sizeof(Result));
+            stringCopy(results[resultCount].studentId, students[i].id);
+            results[resultCount].average = (coefs > 0.0f) ? (pts / coefs) : 0.0f;
+            if (results[resultCount].average >= 10.0f)
+                stringCopy(results[resultCount].status, "Pass");
+            else
+                stringCopy(results[resultCount].status, "Fail");
+
+            printf("%s %s: Avg %.2f [%s]\n", students[i].firstName, students[i].lastName, results[resultCount].average, results[resultCount].status);
+            resultCount++;
+        }
+    }
+}
+
+int main()
+{
+    int ch;
+    do
+    {
+        printf("\n===== SIGL SYSTEM =====\n1.Students\n2.Modules\n3.Grades/Delib\n4.Save\n5.Load\n0.Exit\nChoice: ");
+        scanf("%d", &ch);
+        switch (ch)
+        {
+        case 1:
+            manageStudents();
+            break;
+        case 2:
+            manageModules();
+            break;
+        case 3:
+            manageGradesAndDeliberation();
+            break;
+        case 4:
+            saveToFile();
+            break;
+        case 5:
+            loadFromFile();
+            break;
+        }
+    } while (ch != 0);
+    free(students);
+    free(modules);
+    free(grades);
+    free(results);
+    return 0;
+}
+
+
+
+// Linked Lists
+
+#include <stdio.h>
+#include <stdlib.h>
+
+// ---Linked Lists---
+
+typedef struct StudentNode
+{
+    char id[20];
+    char firstName[30];
+    char lastName[30];
+    char section[10];
+    struct StudentNode *next;
+} StudentNode;
+
+typedef struct ModuleNode
+{
+    char title[50];
+    int coefficient;
+    struct ModuleNode *next;
+} ModuleNode;
+
+typedef struct GradeNode
+{
+    char studentId[20];
+    char moduleTitle[50];
+    float note;
+    struct GradeNode *next;
+} GradeNode;
+
+typedef struct ResultNode
+{
+    char studentId[20];
+    float average;
+    char status[10];
+    struct ResultNode *next;
+} ResultNode;
+
+// --- Global List Heads ---
+StudentNode *studentsHead = NULL;
+ModuleNode *modulesHead = NULL;
+GradeNode *gradesHead = NULL;
+ResultNode *resultsHead = NULL;
+
+// --- Utility Functions (Manual Logic) ---
+
+int stringsEqual(char *s1, char *s2)
+{
+    int i = 0;
+    while (s1[i] != '\0' && s2[i] != '\0')
+    {
+        if (s1[i] != s2[i])
+            return 0;
+        i++;
+    }
+    return (s1[i] == s2[i]);
+}
+
+void stringCopy(char *dest, char *src)
+{
+    int i = 0;
+    while (src[i] != '\0')
+    {
+        dest[i] = src[i];
+        i++;
+    }
+    dest[i] = '\0';
+}
+
+// --- File Operations (Record-by-Record) ---
+
+void saveToFile()
+{
+    FILE *f;
+
+    f = fopen("students.bin", "wb");
+    if (f == NULL)
+        printf("Error opening students.bin\n");
+    else
+    {
+        StudentNode *curr = studentsHead;
+        while (curr != NULL)
+        {
+            fwrite(curr, sizeof(char) * 90, 1, f); // Manual size to avoid saving next ptr
+            curr = curr->next;
+        }
+        fclose(f);
+    }
+
+    f = fopen("modules.bin", "wb");
+    if (f == NULL)
+        printf("Error opening modules.bin\n");
+    else
+    {
+        ModuleNode *curr = modulesHead;
+        while (curr != NULL)
+        {
+            fwrite(curr, sizeof(char) * 54, 1, f);
+            curr = curr->next;
+        }
+        fclose(f);
+    }
+
+    f = fopen("grades.bin", "wb");
+    if (f == NULL)
+        printf("Error opening grades.bin\n");
+    else
+    {
+        GradeNode *curr = gradesHead;
+        while (curr != NULL)
+        {
+            fwrite(curr, sizeof(char) * 74, 1, f);
+            curr = curr->next;
+        }
+        fclose(f);
+    }
+    printf("Data saved successfully.\n");
+}
+
+void loadFromFile()
+{
+    FILE *f;
+    char tempBuffer[100];
+
+    f = fopen("students.bin", "rb");
+    if (f != NULL)
+    {
+        while (fread(tempBuffer, 90, 1, f) == 1)
+        {
+            StudentNode *newNode = (StudentNode *)malloc(sizeof(StudentNode));
+            for (int i = 0; i < 90; i++)
+                ((char *)newNode)[i] = tempBuffer[i];
+            newNode->next = studentsHead;
+            studentsHead = newNode;
+        }
+        fclose(f);
+    }
+
+    f = fopen("modules.bin", "rb");
+    if (f != NULL)
+    {
+        while (fread(tempBuffer, 54, 1, f) == 1)
+        {
+            ModuleNode *newNode = (ModuleNode *)malloc(sizeof(ModuleNode));
+            for (int i = 0; i < 54; i++)
+                ((char *)newNode)[i] = tempBuffer[i];
+            newNode->next = modulesHead;
+            modulesHead = newNode;
+        }
+        fclose(f);
+    }
+
+    f = fopen("grades.bin", "rb");
+    if (f != NULL)
+    {
+        while (fread(tempBuffer, 74, 1, f) == 1)
+        {
+            GradeNode *newNode = (GradeNode *)malloc(sizeof(GradeNode));
+            for (int i = 0; i < 74; i++)
+                ((char *)newNode)[i] = tempBuffer[i];
+            newNode->next = gradesHead;
+            gradesHead = newNode;
+        }
+        fclose(f);
+    }
+    printf("Data loaded.\n");
+}
+
+// --- Management Logic ---
+
+void manageStudents()
+{
+    int ch;
+    char search[30];
+    printf("\n1.Add  2.Delete  3.Search  4.Display\nChoice: ");
+    scanf("%d", &ch);
+
+    if (ch == 1)
+    {
+        StudentNode *newNode = (StudentNode *)malloc(sizeof(StudentNode));
+        if (newNode == NULL)
+        {
+            printf("Memory Error\n");
+            return;
+        }
+        printf("\nID: ");
+        scanf("%s", newNode->id);
+        printf("\nFirst: ");
+        scanf("%s", newNode->firstName);
+        printf("\nLast: ");
+        scanf("%s", newNode->lastName);
+        printf("\nSec: ");
+        scanf("%s", newNode->section);
+        newNode->next = studentsHead;
+        studentsHead = newNode;
+    }
+    else if (ch == 2)
+    {
+        printf("\nID to delete: ");
+        scanf("%s", search);
+        StudentNode *curr = studentsHead, *prev = NULL;
+        while (curr != NULL)
+        {
+            if (stringsEqual(curr->id, search))
+            {
+                if (prev == NULL)
+                    studentsHead = curr->next;
+                else
+                    prev->next = curr->next;
+                free(curr);
+                printf("Student removed.\n");
+                return;
+            }
+            prev = curr;
+            curr = curr->next;
+        }
+    }
+    else if (ch == 3)
+    {
+        printf("\nEnter ID or Name: ");
+        scanf("%s", search);
+        StudentNode *curr = studentsHead;
+        while (curr != NULL)
+        {
+            if (stringsEqual(curr->id, search) || stringsEqual(curr->firstName, search))
+                printf("Found: %s %s, ID: %s, Sec: %s\n", curr->firstName, curr->lastName, curr->id, curr->section);
+            curr = curr->next;
+        }
+    }
+    else if (ch == 4)
+    {
+        StudentNode *curr = studentsHead;
+        while (curr != NULL)
+        {
+            printf("ID %s: %s %s\n", curr->id, curr->firstName, curr->lastName);
+            curr = curr->next;
+        }
+    }
+}
+
+void manageModules()
+{
+    int ch;
+    char title[50];
+    printf("\n1.Add\n2.Delete\n3.Modify\n4.Display\nChoice: ");
+    scanf("%d", &ch);
+    if (ch == 1)
+    {
+        ModuleNode *newNode = (ModuleNode *)malloc(sizeof(ModuleNode));
+        if (newNode == NULL)
+        {
+            printf("Memory Error\n");
+            return;
+        }
+        printf("\nTitle: ");
+        scanf("%s", newNode->title);
+        printf("\nCoeff: ");
+        scanf("%d", &newNode->coefficient);
+        newNode->next = modulesHead;
+        modulesHead = newNode;
+    }
+    else if (ch == 2)
+    {
+        printf("\nTitle to delete: ");
+        scanf("%s", title);
+        ModuleNode *curr = modulesHead, *prev = NULL;
+        while (curr != NULL)
+        {
+            if (stringsEqual(curr->title, title))
+            {
+                if (prev == NULL)
+                    modulesHead = curr->next;
+                else
+                    prev->next = curr->next;
+                free(curr);
+                printf("Module deleted.\n");
+                return;
+            }
+            prev = curr;
+            curr = curr->next;
+        }
+        printf("Module not found.\n");
+    }
+    else if (ch == 3)
+    {
+        printf("\nTitle to modify: ");
+        scanf("%s", title);
+        ModuleNode *curr = modulesHead;
+        while (curr != NULL)
+        {
+            if (stringsEqual(curr->title, title))
+            {
+                printf("\nNew Title: ");
+                scanf("%s", curr->title);
+                printf("\nNew Coeff: ");
+                scanf("%d", &curr->coefficient);
+                printf("Module updated.\n");
+                return;
+            }
+            curr = curr->next;
+        }
+        printf("Module not found.\n");
+    }
+    else if (ch == 4)
+    {
+        ModuleNode *curr = modulesHead;
+        while (curr != NULL)
+        {
+            printf("- %s (Coef: %d)\n", curr->title, curr->coefficient);
+            curr = curr->next;
+        }
+    }
+}
+
+void manageDeliberation()
+{
+    int ch;
+    char sid[20], mt[50], sec[10];
+    printf("\n1.Assign Grade  2.Modify  3.By Module  4.Results\nChoice: ");
+    scanf("%d", &ch);
+
+    if (ch == 1)
+    {
+        GradeNode *newNode = (GradeNode *)malloc(sizeof(GradeNode));
+        printf("\nStudent ID: ");
+        scanf("%s", newNode->studentId);
+        printf("\nModule Title: ");
+        scanf("%s", newNode->moduleTitle);
+        printf("\nNote: ");
+        scanf("%f", &newNode->note);
+        newNode->next = gradesHead;
+        gradesHead = newNode;
+    }
+    else if (ch == 2)
+    {
+        printf("\nID: ");
+        scanf("%s", sid);
+        printf("\nModule: ");
+        scanf("%s", mt);
+        GradeNode *curr = gradesHead;
+        while (curr != NULL)
+        {
+            if (stringsEqual(curr->studentId, sid) && stringsEqual(curr->moduleTitle, mt))
+            {
+                printf("\nNew Grade: ");
+                scanf("%f", &curr->note);
+                return;
+            }
+            curr = curr->next;
+        }
+    }
+    else if (ch == 3)
+    {
+        printf("\nModule: ");
+        scanf("%s", mt);
+        GradeNode *curr = gradesHead;
+        while (curr != NULL)
+        {
+            if (stringsEqual(curr->moduleTitle, mt))
+                printf("ID %s: %.2f\n", curr->studentId, curr->note);
+            curr = curr->next;
+        }
+    }
+    else if (ch == 4)
+    {
+        printf("\nFilter by section? (y/n): ");
+        char f;
+        scanf(" %c", &f);
+        if (f == 'y')
+        {
+            printf("\nSection: ");
+            scanf("%s", sec);
+        }
+
+        // Clear previous results list
+        while (resultsHead != NULL)
+        {
+            ResultNode *tmp = resultsHead;
+            resultsHead = resultsHead->next;
+            free(tmp);
+        }
+
+        StudentNode *sCurr = studentsHead;
+        while (sCurr != NULL)
+        {
+            if (f == 'y' && !stringsEqual(sCurr->section, sec))
+            {
+                sCurr = sCurr->next;
+                continue;
+            }
+
+            float pts = 0.0f;
+            float coefs = 0.0f;
+            GradeNode *gCurr = gradesHead;
+            while (gCurr != NULL)
+            {
+                if (stringsEqual(gCurr->studentId, sCurr->id))
+                {
+                    ModuleNode *mCurr = modulesHead;
+                    while (mCurr != NULL)
+                    {
+                        if (stringsEqual(mCurr->title, gCurr->moduleTitle))
+                        {
+                            pts += gCurr->note * (float)mCurr->coefficient;
+                            coefs += (float)mCurr->coefficient;
+                        }
+                        mCurr = mCurr->next;
+                    }
+                }
+                gCurr = gCurr->next;
+            }
+
+            ResultNode *res = (ResultNode *)malloc(sizeof(ResultNode));
+            stringCopy(res->studentId, sCurr->id);
+            res->average = (coefs > 0.0f) ? (pts / coefs) : 0.0f;
+            if (res->average >= 10.0f)
+                stringCopy(res->status, "Pass");
+            else
+                stringCopy(res->status, "Fail");
+
+            printf("%s %s: Avg %.2f [%s]\n", sCurr->firstName, sCurr->lastName, res->average, res->status);
+            res->next = resultsHead;
+            resultsHead = res;
+            sCurr = sCurr->next;
+        }
+    }
+}
+
+int main()
+{
+    int ch;
+    do
+    {
+        printf("\n=== SIGL SYSTEM ===\n1.Students  2.Modules  3.Grades/Delib  4.Save  5.Load  0.Exit\nChoice: ");
+        scanf("%d", &ch);
+        switch (ch)
+        {
+        case 1:
+            manageStudents();
+            break;
+        case 2:
+            manageModules();
+            break;
+        case 3:
+            manageDeliberation();
+            break;
+        case 4:
+            saveToFile();
+            break;
+        case 5:
+            loadFromFile();
+            break;
+        }
+    } while (ch != 0);
+
+    return 0;
+}
